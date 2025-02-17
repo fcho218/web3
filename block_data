@@ -1,0 +1,16 @@
+from web3 import Web3
+
+w3 = Web3(Web3.HTTPProvider('https://mainnet.infura.io/v3/your_infura_project_id'))
+
+latest_block = w3.eth.get_block('latest')
+print(f"Latest Block Number: {latest_block['number']}")
+print(f"Block Hash: {latest_block['hash'].hex()}")
+print(f"Block Time: {latest_block['timestamp']}")
+
+transactions = latest_block['transactions']
+for tx_hash in transactions:
+    tx = w3.eth.get_transaction(tx_hash)
+    print(f"Transaction Hash: {tx.hash.hex()}")
+    print(f"From: {tx['from']}")
+    print(f"To: {tx['to']}")
+    print(f"Value: {w3.fromWei(tx['value'], 'ether')} ETH")
