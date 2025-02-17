@@ -1,0 +1,50 @@
+import requests
+import time
+import pandas as pd
+
+DUNE_API_KEY = "your_dune_api_key"
+QUERY_ID = "your_query_id"
+
+HEADERS = {
+    "X-Dune-API-Key": DUNE_API_KEY,
+    "Content-Type": "application/json"
+}
+
+def execute_dune_query(query_id):
+    url = f"https://api.dune.com/api/v1/query/{query_id}/execute"
+    response = requests.post(url, headers=HEADERS)
+    if response.status_code == 200:
+        return response.json()["execution_id"]
+    else:
+        print("Error executing query:", response.json())
+        return None
+
+def fetch_dune_results(execution_id):
+    url = f"https://api.dune.com/api/v1/execution/{execution_id}/results"
+    while True:
+        response = requests.get(url, headers=HEADERS)
+        if response.status_code == 200:
+            data = response.json()
+            if data.get("state") == "QUERY_STATE_COMPLETED":
+                return data["result"]["rows"]
+            else:
+                print("Query still running, retrying in 5 seconds...")
+                time.sleep(5)
+        else:
+            print("Error fetching results:", response.json())
+            return None
+
+execution_id = execute_dune_query(QUERY_ID)
+if execution_id:
+    results = fetch_dune_results(execution_id)
+    if results:
+        df = pd.DataFrame(results)
+        print("Transaction Data Summary:")
+        print(df.describe())
+        print("\nTop 10 Transactions by Value:")
+        print(df.sort_values("value", ascending=False).head(10))
+        if "block_time" in df.columns:
+            df["block_time"] = pd.to_datetime(df["block_time"])
+            daily_transactions = df.groupby(df["block_time"].dt.date)["hash"].count()
+            print("\nDaily Transaction Count:")
+            print(daily_transactions)
