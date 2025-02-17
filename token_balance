@@ -1,0 +1,11 @@
+from web3 import Web3
+
+w3 = Web3(Web3.HTTPProvider('https://mainnet.infura.io/v3/your_infura_project_id'))
+contract_address = '0xYourERC20ContractAddress'
+account_address = '0xYourAccountAddress'
+
+abi = [...]  # ERC-20 ABI
+contract = w3.eth.contract(address=contract_address, abi=abi)
+
+balance = contract.functions.balanceOf(account_address).call()
+print(f"Token Balance: {w3.fromWei(balance, 'ether')} Tokens")
