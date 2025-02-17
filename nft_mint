@@ -1,0 +1,39 @@
+from web3 import Web3
+import json
+import requests
+
+w3 = Web3(Web3.HTTPProvider('https://mainnet.infura.io/v3/your_infura_project_id'))
+private_key = "your_private_key"
+account = w3.eth.account.from_key(private_key)
+
+contract_address = '0xYourERC721ContractAddress'
+abi = [...]  # ERC-721 ABI
+contract = w3.eth.contract(address=contract_address, abi=abi)
+
+def upload_to_ipfs(filepath):
+    with open(filepath, 'rb') as f:
+        response = requests.post('https://api.pinata.cloud/pinning/pinFileToIPFS', 
+                                 files={'file': f}, 
+                                 headers={'pinata_api_key': 'your_api_key', 'pinata_secret_api_key': 'your_secret'})
+        return response.json()['IpfsHash']
+
+metadata = {
+    "name": "My NFT",
+    "description": "This is my first NFT!",
+    "image": f"ipfs://{upload_to_ipfs('nft_image.png')}"
+}
+
+metadata_hash = upload_to_ipfs(json.dumps(metadata))
+token_uri = f"ipfs://{metadata_hash}"
+
+nonce = w3.eth.get_transaction_count(account.address)
+tx = contract.functions.mintNFT(account.address, token_uri).build_transaction({
+    'from': account.address,
+    'gas': 500000,
+    'gasPrice': w3.to_wei('20', 'gwei'),
+    'nonce': nonce
+})
+
+signed_tx = w3.eth.account.sign_transaction(tx, private_key)
+tx_hash = w3.eth.send_raw_transaction(signed_tx.rawTransaction)
+print(f"NFT Minted! Tx Hash: {w3.to_hex(tx_hash)}")
