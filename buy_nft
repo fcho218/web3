@@ -1,0 +1,25 @@
+from web3 import Web3
+
+w3 = Web3(Web3.HTTPProvider('https://mainnet.infura.io/v3/your_infura_project_id'))
+private_key = "your_private_key"
+account = w3.eth.account.from_key(private_key)
+
+contract_address = '0xYourERC721MarketplaceAddress'
+abi = [...]  # Marketplace contract ABI
+contract = w3.eth.contract(address=contract_address, abi=abi)
+
+token_id = 1
+price = w3.to_wei(0.1, 'ether')
+
+nonce = w3.eth.get_transaction_count(account.address)
+tx = contract.functions.buyNFT(token_id).build_transaction({
+    'from': account.address,
+    'value': price,
+    'gas': 200000,
+    'gasPrice': w3.to_wei('20', 'gwei'),
+    'nonce': nonce
+})
+
+signed_tx = w3.eth.account.sign_transaction(tx, private_key)
+tx_hash = w3.eth.send_raw_transaction(signed_tx.rawTransaction)
+print(f"NFT Purchased! Tx Hash: {w3.to_hex(tx_hash)}")
