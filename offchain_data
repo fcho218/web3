@@ -1,0 +1,28 @@
+from web3 import Web3
+import requests
+
+w3 = Web3(Web3.HTTPProvider('https://mainnet.infura.io/v3/your_infura_project_id'))
+private_key = "your_private_key"
+account = w3.eth.account.from_key(private_key)
+
+contract_address = '0xYourOracleContractAddress'
+abi = [...]  # Smart contract ABI
+contract = w3.eth.contract(address=contract_address, abi=abi)
+
+def get_bitcoin_price():
+    response = requests.get("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd")
+    return response.json()["bitcoin"]["usd"]
+
+price = int(get_bitcoin_price() * 1e18)
+nonce = w3.eth.get_transaction_count(account.address)
+
+tx = contract.functions.updatePrice(price).build_transaction({
+    'from': account.address,
+    'gas': 100000,
+    'gasPrice': w3.to_wei('20', 'gwei'),
+    'nonce': nonce
+})
+
+signed_tx = w3.eth.account.sign_transaction(tx, private_key)
+tx_hash = w3.eth.send_raw_transaction(signed_tx.rawTransaction)
+print(f"Bitcoin Price Updated On-Chain! Tx Hash: {w3.to_hex(tx_hash)}")
